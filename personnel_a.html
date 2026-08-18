@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personnel Management Form</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --border-color: #dcdde1;
+            --bg-color: #f5f6fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .actions-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stats-badge {
+            background-color: #f8f9fa;
+            border: 1px solid var(--border-color);
+            padding: 8px 14px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--primary-color);
+        }
+
+        .btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-success { background-color: var(--success-color); }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-primary { background-color: var(--secondary-color); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .footer-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Personnel Management Form</h2>
+    
+    <div class="actions-top">
+        <div id="personnelStats" class="stats-badge">
+            Total: <strong>0</strong> &nbsp;|&nbsp; GS: <strong>0</strong> &nbsp;|&nbsp; MIL: <strong>0</strong> &nbsp;|&nbsp; CTR: <strong>0</strong>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
+            <div class="file-input-wrapper">
+                <button type="button" class="btn btn-primary">Import JSON</button>
+                <input type="file" id="importFile" accept=".json" onchange="importJSON(event)">
+            </div>
+        </div>
+    </div>
+
+    <form id="personnelForm">
+        <table id="personnelTable">
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Name</th>
+                    <th style="width: 25%;">Position</th>
+                    <th style="width: 20%;">Service</th>
+                    <th style="width: 18%;">Personnel Type</th>
+                    <th style="width: 12%;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Rows will be dynamically injected here -->
+            </tbody>
+        </table>
+    </form>
+
+    <div class="footer-actions">
+        <span id="rowCount" style="font-size: 14px; color: #666;">Total Records: 0</span>
+        <button type="button" class="btn btn-success" onclick="addRow()">+ Add Line</button>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        addRow();
+    };
+
+    function addRow(data = {}) {
+        const tbody = document.getElementById('tableBody');
+        const row = document.createElement('tr');
+
+        const name = data.name || '';
+        const position = data.position || '';
+        const service = data.service || '';
+        const type = data.personnelType || 'GS';
+
+        row.innerHTML = `
+            <td><input type="text" name="name" value="${escapeHtml(name)}" placeholder="Full Name" required></td>
+            <td><input type="text" name="position" value="${escapeHtml(position)}" placeholder="Job Title / Position" required></td>
+            <td><input type="text" name="service" value="${escapeHtml(service)}" placeholder="Branch / Directorate"></td>
+            <td>
+                <select name="personnelType" onchange="updateStats()">
+                    <option value="GS" ${type === 'GS' ? 'selected' : ''}>GS</option>
+                    <option value="MIL" ${type === 'MIL' ? 'selected' : ''}>MIL</option>
+                    <option value="CTR" ${type === 'CTR' ? 'selected' : ''}>CTR</option>
+                </select>
+            </td>
+            <td>
+                <div class="row-actions">
+                    <button type="button" class="btn btn-danger" style="padding: 6px 10px; font-size: 12px;" onclick="removeRow(this)">Delete</button>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+        updateStats();
+    }
+
+    function removeRow(button) {
+        const tbody = document.getElementById('tableBody');
+        if (tbody.rows.length > 1) {
+            button.closest('tr').remove();
+            updateStats();
+        } else {
+            alert('The form must contain at least one record row.');
+        }
+    }
+
+    function updateStats() {
+        const rows = document.querySelectorAll('#tableBody tr');
+        const total = rows.length;
+        let gsCount = 0;
+        let milCount = 0;
+        let ctrCount = 0;
+
+        rows.forEach(row => {
+            const type = row.querySelector('select[name="personnelType"]').value;
+            if (type === 'GS') gsCount++;
+            else if (type === 'MIL') milCount++;
+            else if (type === 'CTR') ctrCount++;
+        });
+
+        // Update Top Header Counter Badge
+        document.getElementById('personnelStats').innerHTML = 
+            `Total: <strong>${total}</strong> &nbsp;|&nbsp; GS: <strong>${gsCount}</strong> &nbsp;|&nbsp; MIL: <strong>${milCount}</strong> &nbsp;|&nbsp; CTR: <strong>${ctrCount}</strong>`;
+
+        // Update Bottom Counter text
+        document.getElementById('rowCount').innerText = `Total Records: ${total}`;
+    }
+
+    function exportJSON() {
+        const rows = document.querySelectorAll('#tableBody tr');
+        const data = [];
+
+        rows.forEach(row => {
+            const name = row.querySelector('input[name="name"]').value.trim();
+            const position = row.querySelector('input[name="position"]').value.trim();
+            const service = row.querySelector('input[name="service"]').value.trim();
+            const personnelType = row.querySelector('select[name="personnelType"]').value;
+
+            data.push({ name, position, service, personnelType });
+        });
+
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "personnel_data.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const jsonData = JSON.parse(e.target.result);
+                if (!Array.isArray(jsonData)) {
+                    throw new Error("Invalid JSON format. Expected an array of objects.");
+                }
+
+                document.getElementById('tableBody').innerHTML = '';
+
+                if (jsonData.length === 0) {
+                    addRow();
+                } else {
+                    jsonData.forEach(item => addRow(item));
+                }
+
+                event.target.value = '';
+            } catch (error) {
+                alert("Error parsing JSON file: " + error.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+</script>
+
+</body>
+</html>
